@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature and Humidity Monitor</title>
+    <style>
+        body {
+            background-color: white;
+            color: purple;
+            font-family: Arial, sans-serif;
+        }
+        .chart-container {
+            width: 80%;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: red;">Temperature and Humidity Monitor</h1>
+    <div class="chart-container">
+        <canvas id="barChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Initialize the chart
+        const ctx = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [], // Timestamps will go here
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: [],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: [],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Establish a connection to the Django Ninja SSE endpoint
+        const evtSource = new EventSource("/api/realtime/");
+        evtSource.onmessage = function(event) {
+            const data = JSON.parse(event.data); // Assuming the data is in JSON format
+            console.log("New data received:", data);
+
+            // Update the chart with new data
+            barChart.data.labels.push(new Date(data.timestamp).toLocaleTimeString());
+            barChart.data.datasets[0].data.push(data.temperature);
+            barChart.data.datasets[1].data.push(data.humidity);
+            barChart.update();
+        };
+    </script>
+</body>
+</html>
